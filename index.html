@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Customer Contact Ticket Panel</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:'Segoe UI',sans-serif;
+}
+
+body{
+    background:linear-gradient(135deg,#0f172a,#1e293b);
+    height:100vh;
+}
+
+.container{
+    display:flex;
+    height:100vh;
+}
+
+/* Sidebar */
+
+.sidebar{
+    width:300px;
+    background:rgba(15,23,42,.95);
+    color:white;
+    padding:20px;
+    overflow-y:auto;
+}
+
+.sidebar h2{
+    margin-bottom:20px;
+    text-align:center;
+    color:#60a5fa;
+}
+
+.ticket-list{
+    list-style:none;
+}
+
+.ticket-list li{
+    padding:14px;
+    margin-bottom:12px;
+    border-radius:12px;
+    cursor:pointer;
+    color:white;
+    font-weight:600;
+    transition:.3s;
+    box-shadow:0 4px 10px rgba(0,0,0,.25);
+}
+
+.ticket-list li:hover{
+    transform:translateX(5px);
+}
+
+.ticket-list li.active{
+    border:3px solid white;
+}
+
+/* Unique Ticket Colors */
+
+.ticket-color-1{
+    background:linear-gradient(135deg,#2563eb,#3b82f6);
+}
+
+.ticket-color-2{
+    background:linear-gradient(135deg,#7c3aed,#a855f7);
+}
+
+.ticket-color-3{
+    background:linear-gradient(135deg,#059669,#10b981);
+}
+
+.ticket-color-4{
+    background:linear-gradient(135deg,#ea580c,#fb923c);
+}
+
+.ticket-color-5{
+    background:linear-gradient(135deg,#dc2626,#ef4444);
+}
+
+/* Main Panel */
+
+.main{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    background:#f8fafc;
+}
+
+/* Header */
+
+.header{
+    background:white;
+    padding:20px;
+    border-bottom:1px solid #ddd;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    box-shadow:0 2px 10px rgba(0,0,0,.05);
+}
+
+.ticket-status{
+    background:#dcfce7;
+    color:#166534;
+    padding:8px 14px;
+    border-radius:20px;
+    font-size:14px;
+    font-weight:bold;
+}
+
+/* Timeline */
+
+.timeline{
+    flex:1;
+    overflow-y:auto;
+    padding:25px;
+    background:#eef2ff;
+}
+
+.message{
+    margin-bottom:18px;
+    display:flex;
+    animation:fadeIn .3s ease;
+}
+
+@keyframes fadeIn{
+    from{
+        opacity:0;
+        transform:translateY(10px);
+    }
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+}
+
+.customer{
+    justify-content:flex-start;
+}
+
+.agent{
+    justify-content:flex-end;
+}
+
+.bubble{
+    max-width:65%;
+    padding:14px;
+    border-radius:16px;
+    color:white;
+    box-shadow:0 5px 15px rgba(0,0,0,.12);
+}
+
+.customer .bubble{
+    background:linear-gradient(135deg,#3b82f6,#60a5fa);
+}
+
+.agent .bubble{
+    background:linear-gradient(135deg,#10b981,#34d399);
+}
+
+.sender{
+    font-weight:bold;
+    margin-bottom:6px;
+}
+
+.time{
+    font-size:12px;
+    opacity:.85;
+    margin-top:8px;
+}
+
+/* Reply Section */
+
+.reply-section{
+    background:white;
+    padding:20px;
+    border-top:1px solid #ddd;
+}
+
+textarea{
+    width:100%;
+    height:90px;
+    resize:none;
+    padding:12px;
+    border:2px solid #cbd5e1;
+    border-radius:12px;
+    outline:none;
+}
+
+textarea:focus{
+    border-color:#3b82f6;
+}
+
+.actions{
+    margin-top:10px;
+    text-align:right;
+}
+
+button{
+    background:linear-gradient(135deg,#2563eb,#3b82f6);
+    color:white;
+    border:none;
+    padding:12px 24px;
+    border-radius:10px;
+    cursor:pointer;
+    font-weight:bold;
+    transition:.3s;
+}
+
+button:hover{
+    transform:translateY(-2px);
+    box-shadow:0 6px 15px rgba(37,99,235,.4);
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <h2>🎫 Support Tickets</h2>
+        <ul class="ticket-list" id="ticketList"></ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main">
+
+        <div class="header">
+            <h2 id="ticketTitle">Select Ticket</h2>
+
+            <div class="ticket-status">
+                Open
+            </div>
+        </div>
+
+        <div class="timeline" id="timeline"></div>
+
+        <div class="reply-section">
+
+            <textarea
+                id="replyInput"
+                placeholder="Type your reply..."
+            ></textarea>
+
+            <div class="actions">
+                <button onclick="sendReply()">
+                    Send Reply
+                </button>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+// Create Demo Database
+
+if(!localStorage.getItem("supportTickets")){
+
+    const data = {
+
+        "TKT-1001":[
+            {
+                sender:"Customer",
+                text:"Hello, my order hasn't arrived.",
+                time:"09:30 AM"
+            },
+            {
+                sender:"Agent",
+                text:"Can you provide your order number?",
+                time:"09:35 AM"
+            }
+        ],
+
+        "TKT-1002":[
+            {
+                sender:"Customer",
+                text:"I want a refund.",
+                time:"10:10 AM"
+            }
+        ],
+
+        "TKT-1003":[
+            {
+                sender:"Customer",
+                text:"Unable to reset password.",
+                time:"11:15 AM"
+            },
+            {
+                sender:"Agent",
+                text:"Please check your email inbox.",
+                time:"11:18 AM"
+            }
+        ]
+    };
+
+    localStorage.setItem(
+        "supportTickets",
+        JSON.stringify(data)
+    );
+}
+
+let currentTicket = null;
+
+// Load Tickets
+
+function loadTickets(){
+
+    const tickets =
+    JSON.parse(
+        localStorage.getItem("supportTickets")
+    );
+
+    const list =
+    document.getElementById("ticketList");
+
+    list.innerHTML = "";
+
+    let colorIndex = 1;
+
+    Object.keys(tickets).forEach(ticketId=>{
+
+        const li =
+        document.createElement("li");
+
+        li.textContent = ticketId;
+
+        li.classList.add(
+            `ticket-color-${colorIndex}`
+        );
+
+        colorIndex++;
+
+        if(colorIndex > 5){
+            colorIndex = 1;
+        }
+
+        li.onclick = ()=>{
+
+            document
+            .querySelectorAll(".ticket-list li")
+            .forEach(item=>
+                item.classList.remove("active")
+            );
+
+            li.classList.add("active");
+
+            currentTicket = ticketId;
+
+            showConversation(ticketId);
+        };
+
+        list.appendChild(li);
+    });
+}
+
+// Show Messages
+
+function showConversation(ticketId){
+
+    const tickets =
+    JSON.parse(
+        localStorage.getItem("supportTickets")
+    );
+
+    const messages =
+    tickets[ticketId];
+
+    document.getElementById(
+        "ticketTitle"
+    ).textContent = ticketId;
+
+    const timeline =
+    document.getElementById("timeline");
+
+    timeline.innerHTML = "";
+
+    messages.forEach(msg=>{
+
+        const wrapper =
+        document.createElement("div");
+
+        wrapper.className =
+        msg.sender === "Customer"
+        ? "message customer"
+        : "message agent";
+
+        wrapper.innerHTML = `
+            <div class="bubble">
+
+                <div class="sender">
+                    ${msg.sender}
+                </div>
+
+                <div>
+                    ${msg.text}
+                </div>
+
+                <div class="time">
+                    ${msg.time}
+                </div>
+
+            </div>
+        `;
+
+        timeline.appendChild(wrapper);
+    });
+
+    timeline.scrollTop =
+    timeline.scrollHeight;
+}
+
+// Send Reply
+
+function sendReply(){
+
+    if(!currentTicket){
+
+        alert("Please select a ticket.");
+        return;
+    }
+
+    const input =
+    document.getElementById(
+        "replyInput"
+    );
+
+    const message =
+    input.value.trim();
+
+    if(message === ""){
+
+        alert("Reply cannot be empty.");
+        return;
+    }
+
+    const tickets =
+    JSON.parse(
+        localStorage.getItem("supportTickets")
+    );
+
+    tickets[currentTicket].push({
+
+        sender:"Agent",
+
+        text:message,
+
+        time:new Date().toLocaleTimeString([],{
+            hour:"2-digit",
+            minute:"2-digit"
+        })
+
+    });
+
+    localStorage.setItem(
+        "supportTickets",
+        JSON.stringify(tickets)
+    );
+
+    input.value="";
+
+    showConversation(currentTicket);
+}
+
+// Initialize
+
+loadTickets();
+
+</script>
+
+</body>
+</html>
+```
